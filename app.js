@@ -18,6 +18,7 @@ const state = {
   products: [],
   activeCategory: "all",
   currentStore: null,
+  userLoc: null, // { lat, lng } once/if the browser grants geolocation
 };
 
 const el = (id) => document.getElementById(id);
@@ -26,6 +27,52 @@ function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
+}
+
+// Real distance, not a guess: haversine great-circle distance in miles.
+function milesBetween(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function distanceLabel(store) {
+  if (!state.userLoc || store.lat == null || store.lng == null) return null;
+  const mi = milesBetween(state.userLoc.lat, state.userLoc.lng, store.lat, store.lng);
+  return mi < 0.1 ? "< 0.1 mi" : `${mi.toFixed(1)} mi`;
+}
+
+function sortByDistance(stores) {
+  if (!state.userLoc) return stores;
+  return [...stores].sort((a, b) => {
+    const da = a.lat != null ? milesBetween(state.userLoc.lat, state.userLoc.lng, a.lat, a.lng) : Infinity;
+    const db = b.lat != null ? milesBetween(state.userLoc.lat, state.userLoc.lng, b.lat, b.lng) : Infinity;
+    return da - db;
+  });
+}
+
+function requestUserLocation() {
+  if (!("geolocation" in navigator)) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      el("locPillText").textContent = "Near your location";
+      // Re-render whatever's currently on screen with real distances.
+      const filtered = state.activeCategory === "all"
+        ? state.stores
+        : state.stores.filter((s) => s.category === state.activeCategory);
+      renderStoreGrid(filtered);
+    },
+    () => {
+      // Denied or unavailable — corridor-level framing stays, no fake numbers.
+    },
+    { timeout: 8000, maximumAge: 300000 }
+  );
 }
 
 async function api(path, options) {
@@ -117,24 +164,29 @@ function productCardHtml(p) {
 // ---------- RENDER: STORE GRID ----------
 
 function renderStoreGrid(stores) {
-  el("storeCount").textContent = `${stores.length} independent store${stores.length === 1 ? "" : "s"} on the corridor`;
-  if (!stores.length) {
+  const sorted = sortByDistance(stores);
+  el("storeCount").textContent = `${stores.length} independent store${stores.length === 1 ? "" : "s"}${state.userLoc ? ", nearest first" : " on the corridor"}`;
+  if (!sorted.length) {
     el("storeGrid").innerHTML = `<p class="empty-state">No stores in this category yet.</p>`;
     return;
   }
-  el("storeGrid").innerHTML = stores.map(storeCardHtml).join("");
+  el("storeGrid").innerHTML = sorted.map(storeCardHtml).join("");
   el("storeGrid").querySelectorAll(".store-card").forEach((card) => {
     card.addEventListener("click", () => openStoreDetail(card.dataset.id));
   });
 }
 
 function storeCardHtml(s) {
+  const dist = distanceLabel(s);
   return `
     <button class="store-card" data-id="${escapeHtml(s.id)}">
       <div class="store-main">
         <div class="store-name">${escapeHtml(s.name)}</div>
         <div class="store-meta">${escapeHtml(s.category)} · ${escapeHtml(s.city)}</div>
-        <div class="tag-row"><span class="tag">${escapeHtml(s.language || "—")}</span></div>
+        <div class="tag-row">
+          <span class="tag">${escapeHtml(s.language || "—")}</span>
+          ${dist ? `<span class="tag">${dist}</span>` : ""}
+        </div>
       </div>
       <div class="store-side">
         <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
@@ -178,7 +230,7 @@ async function runSearch(query) {
     });
 
     const matchedCats = new Set(products.map((p) => p.category));
-    const matchingStores = state.stores.filter((s) => matchedCats.has(s.category));
+    const matchingStores = sortByDistance(state.stores.filter((s) => matchedCats.has(s.category)));
     el("searchStoreGrid").innerHTML = matchingStores.length
       ? matchingStores.map(storeCardHtml).join("")
       : `<p class="empty-state">No active stores carry this category yet.</p>`;
@@ -199,8 +251,9 @@ function openStoreDetail(storeId, prefillProduct) {
   if (!store) return;
   state.currentStore = store;
 
+  const dist = distanceLabel(store);
   el("detailName").textContent = store.name;
-  el("detailMeta").textContent = `${store.category} · ${store.city}`;
+  el("detailMeta").textContent = `${store.category} · ${store.city}${dist ? " · " + dist : ""}`;
   el("detailAddress").textContent = store.address || "Address on file soon";
   el("detailCategory").textContent = store.category || "—";
   el("detailLanguage").textContent = store.language || "—";
@@ -331,3 +384,4 @@ chatForm.addEventListener("submit", async (e) => {
 // ---------- INIT ----------
 
 loadAll();
+requestUserLocation();
