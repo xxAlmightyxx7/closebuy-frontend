@@ -98,7 +98,42 @@ async function api(path, options) {
 
 // ---------- DATA LOADING ----------
 
-async function loadAll() {
+// Skeleton placeholders so the first paint never looks broken/blank while
+// the free-tier backend wakes up (cold start can take 20-40s).
+function skeletonRailHtml() {
+  return `
+    <div class="rail-block">
+      <div class="skeleton-text" style="width:110px;height:15px;margin:28px 0 12px;"></div>
+      <div class="product-row">
+        ${Array(6).fill(`
+          <div class="product-card skeleton-card">
+            <div class="skeleton-box" style="width:26px;height:26px;margin-bottom:10px;"></div>
+            <div class="skeleton-text" style="width:85%;"></div>
+            <div class="skeleton-text" style="width:50%;margin-top:6px;height:8px;"></div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+function skeletonStoreGridHtml() {
+  return Array(6).fill(`
+    <div class="store-card skeleton-card">
+      <div class="store-main" style="width:100%;">
+        <div class="skeleton-text" style="width:65%;height:13px;"></div>
+        <div class="skeleton-text" style="width:40%;margin-top:9px;height:10px;"></div>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function loadAll(attempt) {
+  attempt = attempt || 1;
+  if (attempt === 1) {
+    el("productRails").innerHTML = skeletonRailHtml().repeat(3);
+    el("storeGrid").innerHTML = skeletonStoreGridHtml();
+    el("storeCount").textContent = "Loading stores…";
+  }
   try {
     const [stores, products] = await Promise.all([
       api("/stores"),
@@ -108,11 +143,20 @@ async function loadAll() {
     state.products = Array.isArray(products) ? products : [];
     renderCategoryRail();
     renderProductRails();
-    renderStoreGrid(state.stores);
+    renderStoreGrid(currentCategoryStores());
   } catch (err) {
     console.error(err);
-    el("productRails").innerHTML = `<p class="empty-state">Couldn't reach the CloseBuy backend right now (it may be waking up from sleep — try again in about 30 seconds). ${escapeHtml(err.message)}</p>`;
+    // The backend is on a free tier that sleeps — a failed first attempt
+    // usually just means it's waking up, so retry quietly before showing
+    // an error the person has to act on themselves.
+    if (attempt <= 3) {
+      el("storeCount").textContent = "Waking up the store list… this can take up to a minute on the first visit.";
+      setTimeout(() => loadAll(attempt + 1), 6000);
+      return;
+    }
+    el("productRails").innerHTML = `<p class="empty-state">Couldn't reach the CloseBuy backend right now. ${escapeHtml(err.message)} — <button class="back-link" style="display:inline;padding:0;margin:0;" onclick="loadAll()">Try again</button></p>`;
     el("storeGrid").innerHTML = "";
+    el("storeCount").textContent = "";
   }
 }
 
