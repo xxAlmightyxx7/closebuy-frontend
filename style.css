@@ -81,7 +81,10 @@ img { max-width: 100%; }
 .loc-pill .icon { color: var(--accent-ink); flex-shrink: 0; }
 
 @media (max-width: 700px) {
-  .loc-pill { display: none; }
+  /* Keep location usable on mobile — collapse to an icon-only button
+     instead of hiding it, since GPS distance matters more on phones. */
+  .loc-pill span { display: none; }
+  .loc-pill { padding: 9px; }
 }
 
 .cat-rail {
@@ -243,3 +246,18 @@ main { max-width: 1080px; margin: 0 auto; padding: 0 20px 80px; }
 }
 
 .empty-state { font-size: 13.5px; color: var(--muted); padding: 20px 0; }
+
+/* ---- LOADING SKELETONS ---- */
+@keyframes skeleton-pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+.skeleton-card { pointer-events: none; cursor: default; }
+.skeleton-card:hover { border-color: var(--border); transform: none; }
+.skeleton-box, .skeleton-text {
+  background: var(--surface-2);
+  border-radius: 6px;
+  height: 11px;
+  animation: skeleton-pulse 1.3s ease-in-out infinite;
+}
