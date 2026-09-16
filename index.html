@@ -63,9 +63,22 @@
     <!-- STORE DETAIL / REQUEST VIEW -->
     <section id="detailView" hidden>
       <button class="back-link" id="backFromDetail">&larr; Back</button>
+
+      <div class="store-hero">
+        <div class="store-hero-icon" id="detailIcon">🛒</div>
+        <div class="store-hero-info">
+          <h2 id="detailName"></h2>
+          <div class="store-hero-meta" id="detailMeta"></div>
+          <div class="tag-row" id="detailTags"></div>
+        </div>
+      </div>
+
+      <p class="detail-disclaimer">Items below are common products for this type of store, not this store's confirmed inventory — tap one (or type below) to ask directly.</p>
+
+      <nav class="dept-rail" id="deptRail" aria-label="Departments"></nav>
+      <div id="deptRails"></div>
+
       <div class="detail-card">
-        <h2 id="detailName"></h2>
-        <div class="store-meta" id="detailMeta"></div>
         <div class="detail-row"><span class="label">Address</span><span class="value" id="detailAddress"></span></div>
         <div class="detail-row"><span class="label">Category</span><span class="value" id="detailCategory"></span></div>
         <div class="detail-row"><span class="label">Language</span><span class="value" id="detailLanguage"></span></div>
