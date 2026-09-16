@@ -56,22 +56,33 @@ function sortByDistance(stores) {
   });
 }
 
-function requestUserLocation() {
-  if (!("geolocation" in navigator)) return;
+function currentCategoryStores() {
+  return state.activeCategory === "all"
+    ? state.stores
+    : state.stores.filter((s) => s.category === state.activeCategory);
+}
+
+function requestUserLocation(manual) {
+  if (!("geolocation" in navigator)) {
+    if (manual) el("locPillText").textContent = "Location not supported";
+    return;
+  }
+  if (manual) el("locPillText").textContent = "Locating…";
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       el("locPillText").textContent = "Near your location";
-      // Re-render whatever's currently on screen with real distances.
-      const filtered = state.activeCategory === "all"
-        ? state.stores
-        : state.stores.filter((s) => s.category === state.activeCategory);
-      renderStoreGrid(filtered);
+      renderStoreGrid(currentCategoryStores());
+      if (manual) {
+        showBrowseView();
+        el("storeGrid").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     },
     () => {
       // Denied or unavailable — corridor-level framing stays, no fake numbers.
+      if (manual) el("locPillText").textContent = "Enable location in your browser";
     },
-    { timeout: 8000, maximumAge: 300000 }
+    { timeout: 8000, maximumAge: manual ? 0 : 300000 }
   );
 }
 
@@ -119,10 +130,9 @@ function renderCategoryRail() {
     btn.addEventListener("click", () => {
       state.activeCategory = btn.dataset.cat;
       renderCategoryRail();
-      const filtered = state.activeCategory === "all"
-        ? state.stores
-        : state.stores.filter((s) => s.category === state.activeCategory);
-      renderStoreGrid(filtered);
+      renderProductRails();
+      renderStoreGrid(currentCategoryStores());
+      el("storesHeading").textContent = state.activeCategory === "all" ? "All stores" : `${state.activeCategory} stores`;
       showBrowseView();
       el("mainView").scrollIntoView({ behavior: "smooth" });
     });
@@ -131,9 +141,13 @@ function renderCategoryRail() {
 
 // ---------- RENDER: PRODUCT RAILS ----------
 
+// Selecting a category clears every other category's rail — only the
+// products for that one category show, so the page reads as a filtered
+// view rather than the full catalog with one section highlighted.
 function renderProductRails() {
   const byCategory = {};
   for (const p of state.products) {
+    if (state.activeCategory !== "all" && p.category !== state.activeCategory) continue;
     (byCategory[p.category] ||= []).push(p);
   }
   const order = Object.keys(CATEGORY_ICONS).filter((c) => byCategory[c]);
@@ -327,6 +341,16 @@ function showBrowseView() {
 el("logoBtn").addEventListener("click", () => {
   showBrowseView();
   window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// Clicking the location pill (re-)asks for real location and jumps straight
+// to every CloseBuy store sorted nearest-first, across all categories.
+el("locPillBtn").addEventListener("click", () => {
+  state.activeCategory = "all";
+  renderCategoryRail();
+  renderProductRails();
+  el("storesHeading").textContent = "All stores";
+  requestUserLocation(true);
 });
 
 // ---------- CHAT WIDGET ----------
