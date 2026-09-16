@@ -71,11 +71,14 @@ img { max-width: 100%; }
 
 .loc-pill {
   display: flex; align-items: center; gap: 6px;
-  font-size: 13px; color: var(--ink-soft);
+  font: inherit; font-size: 13px; color: var(--ink-soft);
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: 100px; padding: 7px 13px; white-space: nowrap; flex-shrink: 0;
+  cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease;
 }
-.loc-pill .icon { color: var(--accent-ink); }
+.loc-pill:hover { border-color: var(--accent); color: var(--ink); }
+.loc-pill:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.loc-pill .icon { color: var(--accent-ink); flex-shrink: 0; }
 
 @media (max-width: 700px) {
   .loc-pill { display: none; }
