@@ -18,10 +18,10 @@
         <input id="searchInput" type="text" placeholder="Search for a product (e.g. rice, cough syrup, wig)" autocomplete="off" />
       </div>
 
-      <div class="loc-pill">
+      <button class="loc-pill" id="locPillBtn" title="Use your location to show real distances to every CloseBuy store">
         <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
         <span id="locPillText">Algonquin Rd corridor</span>
-      </div>
+      </button>
     </div>
 
     <nav class="cat-rail" id="catRail" aria-label="Categories"></nav>
@@ -40,7 +40,7 @@
       <div id="productRails"></div>
 
       <div class="section-head">
-        <h2>All stores</h2>
+        <h2 id="storesHeading">All stores</h2>
         <p id="storeCount"></p>
       </div>
       <div class="store-grid" id="storeGrid"></div>
