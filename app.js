@@ -11,7 +11,90 @@ const CATEGORY_ICONS = {
   "Car Wash": "🚗",
   "Fishing/Specialty": "🎣",
   "Specialty/Liquor": "🍷",
+  "Pet": "🐾",
 };
+
+// ---------- STORE DETAIL CATALOG (illustrative browsing only) ----------
+// These are generic departments/items typical of each store category —
+// NOT this specific store's real inventory. CloseBuy has no per-store
+// stock data by design (Phase 1 is manual availability requests, not an
+// inventory feed), so nothing here is presented as confirmed in-stock —
+// see the disclaimer rendered above the catalog and the lack of prices.
+const DEPT_EMOJI = {
+  "Produce": "🥬", "Meat & Seafood": "🍗", "Dairy & Eggs": "🥛", "Pantry": "🥫",
+  "Frozen": "🧊", "Beverages": "🥤", "Medicine": "💊", "Personal Care": "🧴",
+  "Vitamins": "💊", "Baby Care": "🍼", "Snacks": "🍪", "Drinks": "🥤",
+  "Groceries": "🛒", "Tobacco & Vape": "🚬", "Everyday Essentials": "🔌",
+  "Hair Care": "💇", "Skin Care": "🧴", "Nails": "💅", "Tools": "🛠️",
+  "Hair Extensions": "💁", "Hair Products": "🧴", "Cosmetics": "💄",
+  "Wash Packages": "🚿", "Interior": "🧹", "Add-ons": "✨", "Tackle": "🎣",
+  "Bait": "🪱", "Gear": "🎒", "Beer": "🍺", "Wine": "🍷", "Spirits": "🥃",
+  "Mixers & Ice": "🧊", "Food": "🐶", "Supplies": "🧸", "Health & Grooming": "🩺",
+};
+const DEPARTMENTS = {
+  "Grocery": [
+    { name: "Produce", items: ["Bananas", "Roma Tomatoes", "Onions", "Avocados", "Leafy Greens", "Jalapeños"] },
+    { name: "Meat & Seafood", items: ["Chicken Thighs", "Ground Beef", "Tilapia", "Shrimp", "Chorizo"] },
+    { name: "Dairy & Eggs", items: ["Whole Milk", "Eggs", "Queso Fresco", "Butter", "Crema"] },
+    { name: "Pantry", items: ["Rice", "Beans", "Cooking Oil", "Masa Harina", "Spices"] },
+    { name: "Frozen", items: ["Frozen Vegetables", "Ice Cream", "Frozen Tamales", "Frozen Pupusas"] },
+    { name: "Beverages", items: ["Soda", "Juice", "Bottled Water", "Coffee", "Horchata"] },
+  ],
+  "Pharmacy": [
+    { name: "Medicine", items: ["Cough Syrup", "Pain Relievers", "Allergy Meds", "Cold Medicine", "Antacids"] },
+    { name: "Personal Care", items: ["Toothpaste", "Deodorant", "Shampoo", "Bar Soap", "Razors"] },
+    { name: "Vitamins", items: ["Multivitamins", "Vitamin C", "Fish Oil", "Probiotics"] },
+    { name: "Baby Care", items: ["Diapers", "Baby Wipes", "Baby Formula", "Baby Lotion"] },
+  ],
+  "Convenience": [
+    { name: "Snacks", items: ["Chips", "Candy", "Nuts", "Cookies"] },
+    { name: "Drinks", items: ["Soda", "Energy Drinks", "Bottled Water", "Sports Drinks"] },
+    { name: "Tobacco & Vape", items: ["Cigarettes", "Vape Pens", "Lighters", "Rolling Papers"] },
+    { name: "Everyday Essentials", items: ["Phone Chargers", "Batteries", "Lottery Tickets", "Ice"] },
+  ],
+  "Mini Mart": [
+    { name: "Snacks", items: ["Chips", "Candy", "Nuts", "Cookies"] },
+    { name: "Groceries", items: ["Rice", "Cooking Oil", "Canned Goods", "Bread"] },
+    { name: "Drinks", items: ["Soda", "Bottled Water", "Juice", "Beer"] },
+    { name: "Everyday Essentials", items: ["Phone Chargers", "Batteries", "Lottery Tickets"] },
+  ],
+  "Beauty": [
+    { name: "Hair Care", items: ["Shampoo", "Conditioner", "Hair Oil", "Edge Control"] },
+    { name: "Skin Care", items: ["Face Cream", "Facial Serum", "Face Masks", "Sunscreen"] },
+    { name: "Nails", items: ["Nail Polish", "Acrylic Kits", "Nail Files"] },
+    { name: "Tools", items: ["Blow Dryers", "Flat Irons", "Hair Brushes"] },
+  ],
+  "Beauty Supply": [
+    { name: "Hair Extensions", items: ["Wigs", "Weaves", "Braiding Hair", "Bundles"] },
+    { name: "Hair Products", items: ["Relaxers", "Edge Control", "Hair Oils", "Styling Gel"] },
+    { name: "Tools", items: ["Clippers", "Combs", "Blow Dryers"] },
+    { name: "Cosmetics", items: ["Foundation", "Lip Gloss", "Eyelashes"] },
+  ],
+  "Car Wash": [
+    { name: "Wash Packages", items: ["Exterior Wash", "Full Detail", "Wax & Shine", "Undercarriage Wash"] },
+    { name: "Interior", items: ["Vacuum", "Interior Detail", "Leather Conditioning"] },
+    { name: "Add-ons", items: ["Air Freshener", "Tire Shine", "Headlight Restoration"] },
+  ],
+  "Fishing/Specialty": [
+    { name: "Tackle", items: ["Fishing Rods", "Reels", "Lures", "Hooks", "Fishing Line"] },
+    { name: "Bait", items: ["Live Bait", "Bait Cooler"] },
+    { name: "Gear", items: ["Tackle Boxes", "Nets", "Waders", "Coolers"] },
+  ],
+  "Specialty/Liquor": [
+    { name: "Beer", items: ["Domestic Beer", "Craft Beer", "Imported Beer"] },
+    { name: "Wine", items: ["Red Wine", "White Wine", "Champagne"] },
+    { name: "Spirits", items: ["Whiskey", "Vodka", "Tequila", "Rum"] },
+    { name: "Mixers & Ice", items: ["Soda Mixers", "Ice", "Garnishes"] },
+  ],
+  "Pet": [
+    { name: "Food", items: ["Dog Food", "Cat Food", "Treats", "Pet Chews"] },
+    { name: "Supplies", items: ["Leashes", "Collars", "Toys", "Litter"] },
+    { name: "Health & Grooming", items: ["Flea & Tick", "Pet Vitamins", "Shampoo", "Brushes"] },
+  ],
+};
+const DEFAULT_DEPARTMENTS = [
+  { name: "Everyday Essentials", items: ["Snacks", "Drinks", "Household Basics", "Personal Care"] },
+];
 
 const state = {
   stores: [],
@@ -310,8 +393,14 @@ function openStoreDetail(storeId, prefillProduct) {
   state.currentStore = store;
 
   const dist = distanceLabel(store);
+  el("detailIcon").textContent = CATEGORY_ICONS[store.category] || "🏷️";
   el("detailName").textContent = store.name;
-  el("detailMeta").textContent = `${store.category} · ${store.city}${dist ? " · " + dist : ""}`;
+  el("detailMeta").textContent = `${store.city}${dist ? " · " + dist : ""}`;
+  el("detailTags").innerHTML = `
+    <span class="tag">${escapeHtml(store.category || "—")}</span>
+    <span class="tag">${escapeHtml(store.language || "—")}</span>
+    ${dist ? `<span class="tag">${dist}</span>` : ""}
+  `;
   el("detailAddress").textContent = store.address || "Address on file soon";
   el("detailCategory").textContent = store.category || "—";
   el("detailLanguage").textContent = store.language || "—";
@@ -320,7 +409,63 @@ function openStoreDetail(storeId, prefillProduct) {
   el("sendRequestBtn").disabled = false;
   el("sendRequestBtn").textContent = "Ask this store";
 
+  renderStoreCatalog(store);
+
   showView("detailView");
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+// Renders the illustrative department rail + item rows for a store's
+// category. See the DEPARTMENTS comment above — this is generic browsing
+// content, not the store's actual stock.
+function renderStoreCatalog(store) {
+  const depts = DEPARTMENTS[store.category] || DEFAULT_DEPARTMENTS;
+  const fallbackEmoji = CATEGORY_ICONS[store.category] || "🏷️";
+
+  el("deptRail").innerHTML = depts.map((d, i) => `
+    <button class="dept-chip ${i === 0 ? "active" : ""}" data-target="dept-${i}">
+      ${DEPT_EMOJI[d.name] || fallbackEmoji} ${escapeHtml(d.name)}
+    </button>
+  `).join("");
+
+  el("deptRails").innerHTML = depts.map((d, i) => `
+    <div class="dept-block" id="dept-${i}">
+      <div class="dept-title">${DEPT_EMOJI[d.name] || fallbackEmoji} ${escapeHtml(d.name)}</div>
+      <div class="item-row">
+        ${d.items.map((name) => itemCardHtml(name, DEPT_EMOJI[d.name] || fallbackEmoji)).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  el("deptRail").querySelectorAll(".dept-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      el("deptRail").querySelectorAll(".dept-chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      el(chip.dataset.target).scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  el("deptRails").querySelectorAll(".item-card").forEach((card) => {
+    card.addEventListener("click", () => askAboutItem(card.dataset.name));
+  });
+}
+
+function itemCardHtml(name, emoji) {
+  return `
+    <div class="item-card" data-name="${escapeHtml(name)}">
+      <span class="item-emoji">${emoji}</span>
+      <div class="item-name">${escapeHtml(name)}</div>
+      <button class="item-ask-btn" type="button" tabindex="-1" aria-label="Ask if ${escapeHtml(name)} is available">+</button>
+    </div>
+  `;
+}
+
+// Clicking an illustrative item never "adds" anything — it just prefills
+// the real request box below, which is CloseBuy's actual mechanism.
+function askAboutItem(name) {
+  el("detailProductInput").value = name;
+  el("detailProductInput").closest(".request-box").scrollIntoView({ behavior: "smooth", block: "center" });
+  el("detailProductInput").focus();
 }
 
 el("backFromDetail").addEventListener("click", showBrowseView);
