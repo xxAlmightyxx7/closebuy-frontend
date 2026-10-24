@@ -12,6 +12,11 @@ const CATEGORY_ICONS = {
   "Fishing/Specialty": "🎣",
   "Specialty/Liquor": "🍷",
   "Pet": "🐾",
+  "Gift Shop": "🎁",
+  "Candle Shop": "🕯️",
+  "Boutique/Fashion": "👗",
+  "Thrift/Resale": "♻️",
+  "Framing/Art": "🖼️",
 };
 
 // ---------- STORE DETAIL CATALOG (illustrative browsing only) ----------
@@ -30,6 +35,12 @@ const DEPT_EMOJI = {
   "Wash Packages": "🚿", "Interior": "🧹", "Add-ons": "✨", "Tackle": "🎣",
   "Bait": "🪱", "Gear": "🎒", "Beer": "🍺", "Wine": "🍷", "Spirits": "🥃",
   "Mixers & Ice": "🧊", "Food": "🐶", "Supplies": "🧸", "Health & Grooming": "🩺",
+  "Cards & Stationery": "✉️", "Home & Decor": "🏠", "Seasonal & Gifts": "🎉",
+  "Local & Handmade": "🧵", "Candles": "🕯️", "Home Fragrance": "🌸",
+  "Bath & Body": "🧴", "Apparel": "👕", "Accessories": "👜", "Footwear": "👟",
+  "Secondhand Clothing": "👕", "Housewares": "🍽️", "Furniture": "🛋️",
+  "Jewelry & Accessories": "💍", "Custom Framing": "🖼️", "Art & Prints": "🎨",
+  "Framing Supplies": "🧰",
 };
 const DEPARTMENTS = {
   "Grocery": [
@@ -90,6 +101,33 @@ const DEPARTMENTS = {
     { name: "Food", items: ["Dog Food", "Cat Food", "Treats", "Pet Chews"] },
     { name: "Supplies", items: ["Leashes", "Collars", "Toys", "Litter"] },
     { name: "Health & Grooming", items: ["Flea & Tick", "Pet Vitamins", "Shampoo", "Brushes"] },
+  ],
+  "Gift Shop": [
+    { name: "Cards & Stationery", items: ["Greeting Cards", "Wrapping Paper", "Gift Bags", "Notebooks"] },
+    { name: "Home & Decor", items: ["Candles", "Picture Frames", "Throw Pillows", "Wall Art"] },
+    { name: "Seasonal & Gifts", items: ["Holiday Ornaments", "Gift Baskets", "Seasonal Decor"] },
+    { name: "Local & Handmade", items: ["Handmade Jewelry", "Local Artist Goods", "Specialty Soaps"] },
+  ],
+  "Candle Shop": [
+    { name: "Candles", items: ["Soy Candles", "Scented Jar Candles", "Wax Melts", "Votives"] },
+    { name: "Home Fragrance", items: ["Reed Diffusers", "Room Sprays", "Essential Oils"] },
+    { name: "Bath & Body", items: ["Bath Bombs", "Body Lotion", "Hand Soap"] },
+  ],
+  "Boutique/Fashion": [
+    { name: "Apparel", items: ["Dresses", "Tops", "Denim", "Outerwear"] },
+    { name: "Accessories", items: ["Handbags", "Jewelry", "Scarves", "Belts"] },
+    { name: "Footwear", items: ["Sandals", "Boots", "Sneakers"] },
+  ],
+  "Thrift/Resale": [
+    { name: "Secondhand Clothing", items: ["Clothing", "Shoes", "Accessories"] },
+    { name: "Housewares", items: ["Kitchenware", "Small Appliances", "Decor"] },
+    { name: "Furniture", items: ["Chairs", "Tables", "Lamps"] },
+    { name: "Jewelry & Accessories", items: ["Costume Jewelry", "Handbags", "Belts"] },
+  ],
+  "Framing/Art": [
+    { name: "Custom Framing", items: ["Picture Frames", "Shadow Boxes", "Mat Boards"] },
+    { name: "Art & Prints", items: ["Local Art Prints", "Canvas Art", "Posters"] },
+    { name: "Framing Supplies", items: ["Frame Hardware", "Glass & Acrylic", "Mounting Supplies"] },
   ],
 };
 const DEFAULT_DEPARTMENTS = [
