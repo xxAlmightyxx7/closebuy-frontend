@@ -102,9 +102,31 @@ const state = {
   activeCategory: "all",
   currentStore: null,
   userLoc: null, // { lat, lng } once/if the browser grants geolocation
+  cart: [], // { name, category } — "My List", not a checkout cart (see README)
 };
 
 const el = (id) => document.getElementById(id);
+
+// Generic, keyword-matched illustrative photo for a product/item name — NOT
+// a photo of any specific store's actual stock (CloseBuy has no per-store
+// inventory feed). `lock` pins a stable image per name so it doesn't change
+// on every reload. If the photo fails to load, the emoji underneath shows
+// through instead (see .img-wrap in style.css) — no broken-image icon.
+function itemImageUrl(name) {
+  const words = String(name).toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+  const keywords = (words.slice(0, 3).join("|")) || "grocery";
+  let hash = 0;
+  for (const c of String(name)) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+  return `https://loremflickr.com/240/240/${encodeURIComponent(keywords)}/all?lock=${hash % 10000}`;
+}
+function imgWrapHtml(name, emoji) {
+  return `
+    <div class="img-wrap">
+      <span class="item-emoji">${emoji}</span>
+      <img src="${itemImageUrl(name)}" alt="" loading="lazy" onerror="this.style.display='none'" />
+    </div>
+  `;
+}
 
 function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({
@@ -287,19 +309,31 @@ function renderProductRails() {
     </div>
   `).join("");
 
-  el("productRails").querySelectorAll(".product-card").forEach((card) => {
-    card.addEventListener("click", () => runSearch(card.dataset.name));
-  });
+  wireProductCards(el("productRails"));
 }
 
 function productCardHtml(p) {
   return `
-    <button class="product-card" data-name="${escapeHtml(p.name)}">
-      <span class="product-emoji">${CATEGORY_ICONS[p.category] || "🏷️"}</span>
+    <div class="product-card" data-name="${escapeHtml(p.name)}" data-category="${escapeHtml(p.category)}">
+      ${imgWrapHtml(p.name, CATEGORY_ICONS[p.category] || "🏷️")}
       <div class="product-name">${escapeHtml(p.name)}</div>
       <div class="product-cat">${escapeHtml(p.category)}</div>
-    </button>
+      <button class="item-ask-btn" type="button" tabindex="-1" aria-label="Add ${escapeHtml(p.name)} to my list">+</button>
+    </div>
   `;
+}
+
+// Shared wiring for any container of .product-card nodes: click the card to
+// search for it, click the "+" to add it to the list instead (without also
+// triggering the search navigation).
+function wireProductCards(container) {
+  container.querySelectorAll(".product-card").forEach((card) => {
+    card.addEventListener("click", () => runSearch(card.dataset.name));
+    card.querySelector(".item-ask-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      addToCart(card.dataset.name, card.dataset.category);
+    });
+  });
 }
 
 // ---------- RENDER: STORE GRID ----------
@@ -366,9 +400,7 @@ async function runSearch(query) {
       return;
     }
     el("searchProducts").innerHTML = products.map(productCardHtml).join("");
-    el("searchProducts").querySelectorAll(".product-card").forEach((card) => {
-      card.addEventListener("click", () => runSearch(card.dataset.name));
-    });
+    wireProductCards(el("searchProducts"));
 
     const matchedCats = new Set(products.map((p) => p.category));
     const matchingStores = sortByDistance(state.stores.filter((s) => matchedCats.has(s.category)));
@@ -432,7 +464,7 @@ function renderStoreCatalog(store) {
     <div class="dept-block" id="dept-${i}">
       <div class="dept-title">${DEPT_EMOJI[d.name] || fallbackEmoji} ${escapeHtml(d.name)}</div>
       <div class="item-row">
-        ${d.items.map((name) => itemCardHtml(name, DEPT_EMOJI[d.name] || fallbackEmoji)).join("")}
+        ${d.items.map((name) => itemCardHtml(name, DEPT_EMOJI[d.name] || fallbackEmoji, store.category)).join("")}
       </div>
     </div>
   `).join("");
@@ -447,21 +479,26 @@ function renderStoreCatalog(store) {
 
   el("deptRails").querySelectorAll(".item-card").forEach((card) => {
     card.addEventListener("click", () => askAboutItem(card.dataset.name));
+    card.querySelector(".item-ask-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      addToCart(card.dataset.name, card.dataset.category);
+    });
   });
 }
 
-function itemCardHtml(name, emoji) {
+function itemCardHtml(name, emoji, category) {
   return `
-    <div class="item-card" data-name="${escapeHtml(name)}">
-      <span class="item-emoji">${emoji}</span>
+    <div class="item-card" data-name="${escapeHtml(name)}" data-category="${escapeHtml(category)}">
+      ${imgWrapHtml(name, emoji)}
       <div class="item-name">${escapeHtml(name)}</div>
-      <button class="item-ask-btn" type="button" tabindex="-1" aria-label="Ask if ${escapeHtml(name)} is available">+</button>
+      <button class="item-ask-btn" type="button" tabindex="-1" aria-label="Add ${escapeHtml(name)} to my list">+</button>
     </div>
   `;
 }
 
-// Clicking an illustrative item never "adds" anything — it just prefills
-// the real request box below, which is CloseBuy's actual mechanism.
+// Clicking the item card itself asks THIS store about it right now (fills
+// the real request box below). The separate "+" button adds it to "My
+// List" instead, for checking several items/stores at once — see addToCart.
 function askAboutItem(name) {
   el("detailProductInput").value = name;
   el("detailProductInput").closest(".request-box").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -515,10 +552,164 @@ el("sendRequestBtn").addEventListener("click", async () => {
   }
 });
 
+// ---------- MY LIST (CART) ----------
+// A running list of items the shopper is looking for, so they can check
+// several things against nearby stores at once. This is NOT a shopping
+// cart — there's no checkout, no payment, no confirmed stock. "Matching"
+// below is a category-level guess (does this store's category carry this
+// kind of item), the same honesty level as the rest of the illustrative
+// catalog. See the disclaimer rendered in #listView.
+
+function addToCart(name, category) {
+  if (state.cart.some((i) => i.name === name)) {
+    flashCartToggle("Already on your list");
+    return;
+  }
+  state.cart.push({ name, category });
+  renderCartWidget();
+  flashCartToggle(`Added ${name}`);
+}
+
+function removeFromCart(name) {
+  state.cart = state.cart.filter((i) => i.name !== name);
+  renderCartWidget();
+}
+
+function flashCartToggle(msg) {
+  const toggle = el("cartToggle");
+  toggle.setAttribute("title", msg);
+  toggle.animate(
+    [{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
+    { duration: 260, easing: "ease-out" }
+  );
+}
+
+function renderCartWidget() {
+  el("cartWidget").hidden = state.cart.length === 0;
+  el("cartBadge").textContent = state.cart.length;
+
+  el("cartItems").innerHTML = state.cart.length
+    ? state.cart.map((i) => `
+        <div class="cart-item-row" data-name="${escapeHtml(i.name)}">
+          <div>
+            <div class="cart-item-name">${escapeHtml(i.name)}</div>
+            <div class="cart-item-cat">${escapeHtml(i.category)}</div>
+          </div>
+          <button class="cart-item-remove" type="button" aria-label="Remove ${escapeHtml(i.name)} from my list">&times;</button>
+        </div>
+      `).join("")
+    : `<p class="cart-empty">Your list is empty — tap the + on any item to add it.</p>`;
+
+  el("cartItems").querySelectorAll(".cart-item-row").forEach((row) => {
+    row.querySelector(".cart-item-remove").addEventListener("click", () => removeFromCart(row.dataset.name));
+  });
+}
+
+el("cartToggle").addEventListener("click", () => {
+  el("cartPanel").hidden = !el("cartPanel").hidden;
+});
+el("cartClose").addEventListener("click", () => { el("cartPanel").hidden = true; });
+
+// Ranks stores by how many items on the list fall into a category that
+// store carries. A store's category is singular, so its best possible
+// score is "every list item in that one category" — never a true
+// all-items match unless the whole list happens to share one category.
+// That's shown plainly (e.g. "2 of 3 items") rather than implied as a
+// confirmed full match.
+function matchStoresForList() {
+  const neededByCategory = {};
+  state.cart.forEach((i) => { (neededByCategory[i.category] ||= new Set()).add(i.name); });
+  const totalItems = state.cart.length;
+
+  const scored = state.stores
+    .map((store) => ({
+      store,
+      matched: neededByCategory[store.category] ? neededByCategory[store.category].size : 0,
+      miles: state.userLoc && store.lat != null
+        ? milesBetween(state.userLoc.lat, state.userLoc.lng, store.lat, store.lng)
+        : Infinity,
+    }))
+    .filter((x) => x.matched > 0)
+    .sort((a, b) => b.matched - a.matched || a.miles - b.miles);
+
+  return { scored, totalItems };
+}
+
+function renderListResults() {
+  const { scored, totalItems } = matchStoresForList();
+  if (!scored.length) {
+    el("listResults").innerHTML = `<p class="empty-state">No active stores match any category on your list yet.</p>`;
+    return;
+  }
+  el("listResults").innerHTML = scored.slice(0, 15).map(({ store, matched }) => {
+    const dist = distanceLabel(store);
+    const full = matched === totalItems;
+    return `
+      <div class="list-match-card ${full ? "full-match" : ""}">
+        <div class="store-main">
+          <div class="store-name">${escapeHtml(store.name)}</div>
+          <div class="store-meta">${escapeHtml(store.category)} · ${escapeHtml(store.city)}${dist ? " · " + dist : ""}</div>
+          <div class="tag-row">
+            <span class="tag ${full ? "match-tag" : ""}">${matched} of ${totalItems} items on your list</span>
+          </div>
+        </div>
+        <button class="btn-primary list-ask-btn" data-id="${escapeHtml(store.id)}">Ask this store</button>
+      </div>
+    `;
+  }).join("");
+
+  el("listResults").querySelectorAll(".list-ask-btn").forEach((btn) => {
+    btn.addEventListener("click", () => askStoreAboutList(btn.dataset.id));
+  });
+}
+
+el("findStoresBtn").addEventListener("click", () => {
+  el("cartPanel").hidden = true;
+  renderListResults();
+  showView("listView");
+  window.scrollTo({ top: 0, behavior: "auto" });
+});
+el("backFromList").addEventListener("click", showBrowseView);
+
+// Sends ONE combined request to a store for every list item that falls in
+// that store's category — never items outside it (asking a grocery store
+// about dog food isn't useful). Reuses the same /request endpoint as the
+// single-item "Ask this store" flow, just with a joined product list.
+async function askStoreAboutList(storeId) {
+  const store = state.stores.find((s) => String(s.id) === String(storeId));
+  if (!store) return;
+  const items = state.cart.filter((i) => i.category === store.category).map((i) => i.name);
+  if (!items.length) return;
+  const combined = items.join(", ");
+
+  const btn = document.querySelector(`.list-ask-btn[data-id="${CSS.escape(String(storeId))}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
+
+  try {
+    const requestId = "req-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    await api("/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requestId,
+        productName: combined,
+        storeId: store.id,
+        storeName: store.name,
+        storePhone: store.phone || null,
+        customerSession: sessionId(),
+      }),
+    });
+    if (btn) btn.textContent = store.phone ? "Sent ✓" : "Logged (no phone on file)";
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = "Ask this store"; }
+    alert(`Couldn't send that: ${err.message}`);
+  }
+}
+
 // ---------- VIEW SWITCHING ----------
 
 function showView(id) {
-  ["browseView", "searchView", "detailView"].forEach((v) => {
+  ["browseView", "searchView", "detailView", "listView"].forEach((v) => {
     el(v).hidden = v !== id;
   });
 }
@@ -595,6 +786,8 @@ chatForm.addEventListener("submit", async (e) => {
 });
 
 // ---------- INIT ----------
+
+renderCartWidget();
 
 loadAll();
 requestUserLocation();
