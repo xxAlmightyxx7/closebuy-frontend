@@ -92,7 +92,35 @@
       </div>
     </section>
 
+    <!-- LIST MATCH VIEW -->
+    <section id="listView" hidden>
+      <div class="section-head">
+        <button class="back-link" id="backFromList">&larr; Back</button>
+        <h2>Stores for your list</h2>
+      </div>
+      <p class="detail-disclaimer">Ranked by how many items on your list fall into a category that store carries — not a confirmed match. Ask a store to check the specifics.</p>
+      <div id="listResults" class="list-results"></div>
+    </section>
+
   </main>
+
+  <!-- LIST (CART) WIDGET -->
+  <div id="cartWidget" class="cart-widget" hidden>
+    <button id="cartToggle" class="cart-toggle" aria-label="View my list">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span id="cartBadge" class="cart-badge">0</span>
+    </button>
+    <div id="cartPanel" class="cart-panel" hidden>
+      <div class="cart-header">
+        <span>My List</span>
+        <button id="cartClose" aria-label="Close">&times;</button>
+      </div>
+      <div id="cartItems" class="cart-items"></div>
+      <div class="cart-footer">
+        <button class="btn-primary" id="findStoresBtn">Find matching stores</button>
+      </div>
+    </div>
+  </div>
 
   <!-- CHAT WIDGET -->
   <div id="chatWidget" class="chat-widget">
